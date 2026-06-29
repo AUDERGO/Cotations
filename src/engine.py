@@ -36,7 +36,7 @@ def safe_check(df, crit):
         return 0
 
     return int((row[col_j].values[0] + row[col_r].values[0]) > 0)
-
+    print(df.columns.tolist())
 
 
 # ----------------------
