@@ -96,10 +96,34 @@ def safe_check(df, crit):
 
     return int((row[col_j].values[0] + row[col_r].values[0]) > 0)
 
+# =========================
+# AJOUT CONDITION MEMBRES_INF POUR MEC : onglet Evaluation ergonomique
+# =========================
+def check_membres_inf_extra(file):
+
+    df = pd.read_excel(file, sheet_name="Evaluation ergonomique", header=None)
+
+    # indices python (ligne Excel - 1)
+    cells = [
+        (18, 13),  # N19
+        (18, 17),  # R19
+        (19, 13),  # N20
+        (19, 17)   # R20
+    ]
+
+    for r, c in cells:
+        try:
+            if pd.notna(df.iloc[r, c]):
+                return 1
+        except:
+            pass
+
+    return 0
 
 # =========================
 # POSTURES MEC / VEC
 # =========================
+"""
 def compute_postures_mec(df):
     return {
         "membres_inf": safe_check(df, 3),
@@ -108,7 +132,19 @@ def compute_postures_mec(df):
         "dos": safe_check(df, 10),
         "cervicales": safe_check(df, 11)
     }
+"""
 
+def compute_postures_mec(df, file):
+    return {
+        "membres_inf": max(
+            safe_check(df, 3),
+            check_membres_inf_extra(file)
+        ),
+        "poignet": safe_check(df, 8),
+        "epaule": safe_check(df, 9),
+        "dos": safe_check(df, 10),
+        "cervicales": safe_check(df, 11)
+    }
 
 def compute_postures_vec(df):
     return {
@@ -176,7 +212,7 @@ def process_files(mec_files, vec_files, engins_file):
         
         file.seek(0)
         df = read_table1(file)
-        postures = compute_postures_mec(df)
+        postures = compute_postures_mec(df, file)
         file.seek(0)
         charges = extract_charges(file, True)
 
