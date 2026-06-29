@@ -1,18 +1,18 @@
-from openpyxl import load_workbook
 import pandas as pd
+from openpyxl import load_workbook
 
+
+# =========================
+# LECTURE TABLE1 (Résultats)
+# =========================
 def read_table1(file):
 
     wb = load_workbook(file, data_only=True)
     ws = wb["Résultats"]
 
-    # récupérer la table
     table = ws.tables["Table1"]
-
-    # plage de la table (ex: A10:F40)
     data = ws[table.ref]
 
-    # convertir en liste
     rows = list(data)
 
     # header
@@ -29,18 +29,17 @@ def read_table1(file):
     # nettoyage
     df.columns = df.columns.str.strip().str.lower()
 
+    # garder lignes utiles
+    df = df[df["item"].notna()]
+
     return df
 
 
-# ----------------------
-# SAFE CHECK (Résultats)
-# ----------------------
+# =========================
+# SAFE CHECK POSTURE
+# =========================
 def safe_check(df, crit):
 
-    # Nettoyage colonnes
-    df.columns = df.columns.str.strip().str.lower()
-
-    # 🔍 trouver colonnes dynamiquement
     col_j = None
     col_r = None
 
@@ -51,15 +50,10 @@ def safe_check(df, crit):
             col_r = col
 
     if col_j is None or col_r is None:
-        raise ValueError(f"❌ Colonnes jaunes/rouges introuvables : {df.columns.tolist()}")
+        raise ValueError("Colonnes jaunes / rouges introuvables")
 
-    # sécurisation valeurs
-    df[col_j] = df[col_j].fillna(0)
-    df[col_r] = df[col_r].fillna(0)
-
-    # filtre ITEM
-    if "item" not in df.columns:
-        raise ValueError("❌ Colonne ITEM absente")
+    df[col_j] = pd.to_numeric(df[col_j], errors="coerce").fillna(0)
+    df[col_r] = pd.to_numeric(df[col_r], errors="coerce").fillna(0)
 
     row = df[df["item"] == crit]
 
@@ -67,12 +61,11 @@ def safe_check(df, crit):
         return 0
 
     return int((row[col_j].values[0] + row[col_r].values[0]) > 0)
-    print(df.columns.tolist())
 
 
-# ----------------------
+# =========================
 # POSTURES MEC / VEC
-# ----------------------
+# =========================
 def compute_postures_mec(df):
     return {
         "membres_inf": safe_check(df, 3),
@@ -93,9 +86,9 @@ def compute_postures_vec(df):
     }
 
 
-# ----------------------
-# CHARGES
-# ----------------------
+# =========================
+# CHARGES (Evaluation ergonomique)
+# =========================
 def extract_charges(file, is_mec):
 
     df = pd.read_excel(file, sheet_name="Evaluation ergonomique", header=None)
@@ -131,30 +124,27 @@ def extract_charges(file, is_mec):
     return result
 
 
-# ----------------------
-# MAIN FUNCTION
-# ----------------------
+# =========================
+# FONCTION PRINCIPALE
+# =========================
 def process_files(mec_files, vec_files, engins_file):
 
     engins_df = pd.read_excel(engins_file)
 
-    # normalisation colonnes engins
     engins_df.columns = engins_df.columns.str.replace("-", "_")
 
     results = []
 
-    # ---- MEC ----
+    # ---------- MEC ----------
     for file in mec_files:
 
         name = file.name.replace(".xlsx", "")
-        df = pd.read_excel(file, sheet_name="Résultats", header=10)
 
+        df = read_table1(file)
         postures = compute_postures_mec(df)
-
         charges = extract_charges(file, True)
 
-        match = engins_df.loc[engins_df["Poste"] == name]
-
+        match = engins_df[engins_df["Poste"] == name]
         if match.empty:
             continue
 
@@ -177,18 +167,16 @@ def process_files(mec_files, vec_files, engins_file):
             "posture": int(any(postures.values()))
         })
 
-    # ---- VEC ----
+    # ---------- VEC ----------
     for file in vec_files:
 
         name = file.name.replace(".xlsx", "")
-        df = pd.read_excel(file, sheet_name="Résultats")
 
+        df = read_table1(file)
         postures = compute_postures_vec(df)
-
         charges = extract_charges(file, False)
 
-        match = engins_df.loc[engins_df["Poste"] == name]
-
+        match = engins_df[engins_df["Poste"] == name]
         if match.empty:
             continue
 
