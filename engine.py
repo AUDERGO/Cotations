@@ -45,7 +45,7 @@ def process_files(mec_files, vec_files, engins_file):
 
         name = file.name.replace(".xlsx", "")
 
-        df = pd.read_excel(file, sheet_name="Evaluation ergonomique")
+        df = pd.read_excel(file, sheet_name="Résultats")
 
         membres_inf, poignet, epaule, dos, cervicales, posture = compute_postures_mec(df)
 
@@ -81,7 +81,7 @@ def process_files(mec_files, vec_files, engins_file):
 
         name = file.name.replace(".xlsx", "")
 
-        df = pd.read_excel(file, sheet_name="Evaluation ergonomique")
+        df = pd.read_excel(file, sheet_name="Résultats")
 
         membres_inf, poignet, epaule, dos, cervicales, posture = compute_postures_vec(df)
 
