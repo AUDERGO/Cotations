@@ -6,13 +6,29 @@ import pandas as pd
 # ----------------------
 def safe_check(df, crit):
 
+    # Nettoyage colonnes
     df.columns = df.columns.str.strip().str.lower()
 
-    col_j = "points jaunes"
-    col_r = "points rouges"
+    # 🔍 trouver colonnes dynamiquement
+    col_j = None
+    col_r = None
 
+    for col in df.columns:
+        if "jaune" in col:
+            col_j = col
+        if "rouge" in col:
+            col_r = col
+
+    if col_j is None or col_r is None:
+        raise ValueError(f"❌ Colonnes jaunes/rouges introuvables : {df.columns.tolist()}")
+
+    # sécurisation valeurs
     df[col_j] = df[col_j].fillna(0)
     df[col_r] = df[col_r].fillna(0)
+
+    # filtre ITEM
+    if "item" not in df.columns:
+        raise ValueError("❌ Colonne ITEM absente")
 
     row = df[df["item"] == crit]
 
@@ -20,6 +36,7 @@ def safe_check(df, crit):
         return 0
 
     return int((row[col_j].values[0] + row[col_r].values[0]) > 0)
+
 
 
 # ----------------------
