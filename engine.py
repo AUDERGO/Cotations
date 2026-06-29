@@ -49,7 +49,13 @@ def process_files(mec_files, vec_files, engins_file):
 
         membres_inf, poignet, epaule, dos, cervicales, posture = compute_postures_mec(df)
 
-        engin_row = engins_df.loc[engins_df["Poste"] == name].iloc[0]
+        match = engins_df.loc[engins_df["Poste"] == name]
+
+        if match.empty:
+            st.error(f"❌ Poste absent fichier engins : {name}")
+            continue
+
+        engin_row = match.iloc[0]
 
         results.append({
             "Poste": name,
@@ -79,8 +85,14 @@ def process_files(mec_files, vec_files, engins_file):
 
         membres_inf, poignet, epaule, dos, cervicales, posture = compute_postures_vec(df)
 
-        engin_row = engins_df.loc[engins_df["Poste"] == name].iloc[0]
+        match = engins_df.loc[engins_df["Poste"] == name]
 
+        if match.empty:
+            st.error(f"❌ Poste absent fichier engins : {name}")
+            continue
+
+        engin_row = match.iloc[0]
+        
         results.append({
             "Poste": name,
             "Engin": engin_row["Engin"],
