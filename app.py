@@ -1,80 +1,57 @@
 import streamlit as st
-import pandas as pd
-from src.engine import run_from_folders
-import os
-import tempfile
+from engine import process_files
+from datetime import datetime
+import io
 
 st.title("🧠 Cotation ergonomique")
 
-# -------------------------
-# INPUT UTILISATEUR
-# -------------------------
-
-st.header("1. Sélection des données")
+st.markdown("### 📂 Charger les fichiers")
 
 mec_files = st.file_uploader(
-    "📂 Charger fichiers MEC",
-    accept_multiple_files=True
-)
-
-vec_files = st.file_uploader(
-    "📂 Charger fichiers VEC",
-    accept_multiple_files=True
-)
-
-engins_file = st.file_uploader(
-    "📄 Charger fichier cotations_engins.xlsx",
+    "Fichiers MEC",
+    accept_multiple_files=True,
     type=["xlsx"]
 )
 
-# -------------------------
-# EXECUTION
-# -------------------------
+vec_files = st.file_uploader(
+    "Fichiers VEC",
+    accept_multiple_files=True,
+    type=["xlsx"]
+)
 
+engins_file = st.file_uploader(
+    "Fichier cotations_engins.xlsx",
+    type=["xlsx"]
+)
+
+# -------- bouton --------
 if st.button("🚀 Lancer le calcul"):
 
     if not mec_files or not vec_files or not engins_file:
-        st.error("⚠️ Charger tous les fichiers nécessaires")
+        st.error("⚠️ Merci de charger tous les fichiers")
     else:
 
-        with tempfile.TemporaryDirectory() as tmpdir:
+        df = process_files(mec_files, vec_files, engins_file)
 
-            mec_dir = os.path.join(tmpdir, "MEC")
-            vec_dir = os.path.join(tmpdir, "VEC")
+        st.success("✅ Calcul terminé")
 
-            os.makedirs(mec_dir, exist_ok=True)
-            os.makedirs(vec_dir, exist_ok=True)
+        st.write("📊 Résultats")
+        st.dataframe(df)
 
-            # sauvegarde fichiers MEC
-            for file in mec_files:
-                with open(os.path.join(mec_dir, file.name), "wb") as f:
-                    f.write(file.read())
+        st.write(f"Nombre de postes traités : {len(df)}")
 
-            # sauvegarde fichiers VEC
-            for file in vec_files:
-                with open(os.path.join(vec_dir, file.name), "wb") as f:
-                    f.write(file.read())
+        # ✅ EXPORT EXCEL (AU BON ENDROIT)
 
-            # sauvegarde engins
-            engins_path = os.path.join(tmpdir, "engins.xlsx")
-            with open(engins_path, "wb") as f:
-                f.write(engins_file.read())
+        now = datetime.now()
+        filename = now.strftime("bilan_cotations_%Y-%m-%d_%H-%M.xlsx")
 
-            # run engine
-            df = run_from_folders(
-                mec_dir,
-                vec_dir,
-                engins_path,
-                os.path.join(tmpdir, "output.xlsx")
-            )
+        buffer = io.BytesIO()
+        df.to_excel(buffer, index=False, engine="openpyxl")
+        buffer.seek(0)
 
-            st.success("✅ Calcul terminé")
-
-            st.dataframe(df)
-
-            # DOWNLOAD
-            st.download_button(
-                "⬇️ Télécharger résultat",
-                df.to_csv(index=False),
-                file_name="cotations_bilan.csv"
-            )
+        st.download_button(
+            label="⬇️ Télécharger résultats (Excel)",
+            data=buffer,
+            file_name=filename,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
