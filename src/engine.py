@@ -19,11 +19,6 @@ def read_table1(file):
 
     ws = wb["Résultats"]
 
-    """
-    table = ws.tables["Table1"]
-    data = ws[table.ref]
-    """
-
     if not ws.tables:
         raise ValueError("❌ Aucune table détectée dans 'Résultats'")
 
