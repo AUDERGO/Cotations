@@ -272,5 +272,42 @@ def process_files(mec_files, vec_files, engins_file):
             **postures,
             "posture": int(any(postures.values()))
         })
-
+   
+    """
     return pd.DataFrame(results)
+    """
+    
+    df = pd.DataFrame(results)
+
+    # ✅ ordre d'affichage voulu
+    ordered_cols = [
+        "Poste",
+        "engin_debout",
+        "engin_frontal",
+        "engin_retract",
+        "engin_tous",
+        "Engin",
+        "Charge",
+        "3_6_KG",
+        "6_9_KG",
+        "9_12_KG",
+        "12+_KG",
+        "materiel",
+        "specifique",
+        "posture"
+        "epaule",
+        "dos",
+        "cervicales",
+        "membres_inf",
+        "poignet",
+        
+    ]
+
+    # ✅ sécurité (si colonnes en plus ou renommées)
+    ordered_cols = [col for col in ordered_cols if col in df.columns]
+
+    # ✅ réorganisation
+    df = df[ordered_cols]
+
+    return df
+
