@@ -1,4 +1,35 @@
+from openpyxl import load_workbook
 import pandas as pd
+
+def read_table1(file):
+
+    wb = load_workbook(file, data_only=True)
+    ws = wb["Résultats"]
+
+    # récupérer la table
+    table = ws.tables["Table1"]
+
+    # plage de la table (ex: A10:F40)
+    data = ws[table.ref]
+
+    # convertir en liste
+    rows = list(data)
+
+    # header
+    columns = [cell.value for cell in rows[0]]
+
+    # data
+    values = [
+        [cell.value for cell in row]
+        for row in rows[1:]
+    ]
+
+    df = pd.DataFrame(values, columns=columns)
+
+    # nettoyage
+    df.columns = df.columns.str.strip().str.lower()
+
+    return df
 
 
 # ----------------------
@@ -116,7 +147,7 @@ def process_files(mec_files, vec_files, engins_file):
     for file in mec_files:
 
         name = file.name.replace(".xlsx", "")
-        df = pd.read_excel(file, sheet_name="Résultats")
+        df = pd.read_excel(file, sheet_name="Résultats", header=10)
 
         postures = compute_postures_mec(df)
 
