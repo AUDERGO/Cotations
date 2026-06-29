@@ -7,7 +7,17 @@ from openpyxl import load_workbook
 # =========================
 def read_table1(file):
 
-    wb = load_workbook(file, data_only=True, read_only=True)
+    from io import BytesIO
+
+    content = file.read()
+    file.seek(0)
+
+    wb = load_workbook(
+        filename=BytesIO(content),
+        data_only=True,
+        read_only=True
+    )
+
     ws = wb["Résultats"]
 
     table = ws.tables["Table1"]
@@ -15,21 +25,12 @@ def read_table1(file):
 
     rows = list(data)
 
-    # header
     columns = [cell.value for cell in rows[0]]
-
-    # data
-    values = [
-        [cell.value for cell in row]
-        for row in rows[1:]
-    ]
+    values = [[cell.value for cell in row] for row in rows[1:]]
 
     df = pd.DataFrame(values, columns=columns)
 
-    # nettoyage
     df.columns = df.columns.str.strip().str.lower()
-
-    # garder lignes utiles
     df = df[df["item"].notna()]
 
     return df
@@ -131,7 +132,7 @@ def process_files(mec_files, vec_files, engins_file):
 
     engins_df = pd.read_excel(engins_file)
 
-    engins_df.columns = engins_df.columns.str.replace("-", "_")
+    engins_df["Poste"] = engins_df["Poste"].str.strip()
 
     results = []
 
@@ -139,9 +140,11 @@ def process_files(mec_files, vec_files, engins_file):
     for file in mec_files:
 
         name = file.name.replace(".xlsx", "")
-
+        
+        file.seek(0)
         df = read_table1(file)
         postures = compute_postures_mec(df)
+        file.seek(0)
         charges = extract_charges(file, True)
 
         match = engins_df[engins_df["Poste"] == name]
@@ -171,9 +174,11 @@ def process_files(mec_files, vec_files, engins_file):
     for file in vec_files:
 
         name = file.name.replace(".xlsx", "")
-
+        
+        file.seek(0)
         df = read_table1(file)
         postures = compute_postures_vec(df)
+        file.seek(0)
         charges = extract_charges(file, False)
 
         match = engins_df[engins_df["Poste"] == name]
