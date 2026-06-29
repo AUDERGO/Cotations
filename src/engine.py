@@ -7,7 +7,7 @@ from openpyxl import load_workbook
 # =========================
 def read_table1(file):
 
-    wb = load_workbook(file, data_only=True)
+    wb = load_workbook(file, data_only=True, read_only=True)
     ws = wb["Résultats"]
 
     table = ws.tables["Table1"]
