@@ -2,18 +2,15 @@ import pandas as pd
 from src.reader import read_resultats, read_ergo
 from src.rules_mec import compute_postures_mec
 from src.rules_vec import compute_postures_vec
-from src.utils import clean_poste_name
+from src.utils import get_poste_name
 from src.controls import check_poste_engins
-
-
-def load_engins(path):
-    return pd.read_excel(path)
 
 
 def process_poste(file_path, engins_df):
 
-    name = clean_poste_name(file_path.name)
-    is_mec = "MEC" in file_path.name
+    name = get_poste_name(file_path.name)
+
+    is_mec = file_path.name.startswith("MEC")
 
     resultats = read_resultats(file_path)
     ergo = read_ergo(file_path)
@@ -27,7 +24,9 @@ def process_poste(file_path, engins_df):
     else:
         postures = compute_postures_vec(resultats)
 
-    engin_row = engins_df.loc[engins_df["Poste"] == name].iloc[0]
+    engin_row = engins_df.loc[
+        engins_df["Poste"] == name
+    ].iloc[0]
 
     return {
         "Poste": name,
@@ -44,3 +43,25 @@ def process_poste(file_path, engins_df):
         **postures,
         "Temps": 0
     }
+
+
+def run_from_folders(mec_folder, vec_folder, engins_file, output_file):
+
+    engins_df = pd.read_excel(engins_file)
+
+    results = []
+
+    from pathlib import Path
+
+    for folder in [mec_folder, vec_folder]:
+        for file in Path(folder).glob("*.xlsx"):
+            try:
+                res = process_poste(file, engins_df)
+                results.append(res)
+            except Exception as e:
+                print(f"Erreur sur {file.name}: {e}")
+
+    df = pd.DataFrame(results)
+    df.to_excel(output_file, index=False)
+
+    return df
