@@ -1,67 +1,103 @@
 import pandas as pd
-from src.reader import read_resultats, read_ergo
-from src.rules_mec import compute_postures_mec
-from src.rules_vec import compute_postures_vec
-from src.utils import get_poste_name
-from src.controls import check_poste_engins
+
+def safe_check(df, crit):
+    row = df[df["N°"] == crit]
+    if row.empty:
+        return 0
+    return int((row["J"].values[0] + row["R"].values[0]) > 0)
 
 
-def process_poste(file_path, engins_df):
+# -------- MEC --------
+def compute_postures_mec(df):
+    membres_inf = safe_check(df, 3)
+    poignet = safe_check(df, 8)
+    epaule = safe_check(df, 9)
+    dos = safe_check(df, 10)
+    cervicales = safe_check(df, 11)
 
-    name = get_poste_name(file_path.name)
+    posture = int(membres_inf or poignet or epaule or dos or cervicales)
 
-    is_mec = file_path.name.startswith("MEC")
-
-    resultats = read_resultats(file_path)
-    ergo = read_ergo(file_path)
-
-    print(f"Traitement : {name}")
-
-    check_poste_engins(name, engins_df)
-
-    if is_mec:
-        postures = compute_postures_mec(resultats)
-    else:
-        postures = compute_postures_vec(resultats)
-
-    engin_row = engins_df.loc[
-        engins_df["Poste"] == name
-    ].iloc[0]
-
-    return {
-        "Poste": name,
-        "Engin": engin_row["Engin"],
-        "engin_debout": engin_row["engin_debout"],
-        "engin_frontal": engin_row["engin_frontal"],
-        "engin_retract": engin_row["engin_retract"],
-        "engin_tous": int(
-            engin_row["engin_debout"] == 1 and
-            engin_row["engin_frontal"] == 1 and
-            engin_row["engin_retract"] == 1
-        ),
-        "Charge": 0,
-        **postures,
-        "Temps": 0
-    }
+    return membres_inf, poignet, epaule, dos, cervicales, posture
 
 
-def run_from_folders(mec_folder, vec_folder, engins_file, output_file):
+# -------- VEC --------
+def compute_postures_vec(df):
+    membres_inf = int(safe_check(df, 4) or safe_check(df, 1))
+    poignet = safe_check(df, 5)
+    epaule = safe_check(df, 6)
+    dos = int(safe_check(df, 7) or safe_check(df, 3))
+    cervicales = int(safe_check(df, 8) or safe_check(df, 2))
+
+    posture = int(membres_inf or poignet or epaule or dos or cervicales)
+
+    return membres_inf, poignet, epaule, dos, cervicales, posture
+
+
+# -------- MAIN --------
+def process_files(mec_files, vec_files, engins_file):
 
     engins_df = pd.read_excel(engins_file)
 
     results = []
 
-    from pathlib import Path
+    # MEC
+    for file in mec_files:
 
-    for folder in [mec_folder, vec_folder]:
-        for file in Path(folder).glob("*.xlsx"):
-            try:
-                res = process_poste(file, engins_df)
-                results.append(res)
-            except Exception as e:
-                print(f"Erreur sur {file.name}: {e}")
+        name = file.name.replace(".xlsx", "")
 
-    df = pd.DataFrame(results)
-    df.to_excel(output_file, index=False)
+        df = pd.read_excel(file, sheet_name="Evaluation ergonomique")
 
-    return df
+        membres_inf, poignet, epaule, dos, cervicales, posture = compute_postures_mec(df)
+
+        engin_row = engins_df.loc[engins_df["Poste"] == name].iloc[0]
+
+        results.append({
+            "Poste": name,
+            "Engin": engin_row["Engin"],
+            "engin_debout": engin_row["engin_debout"],
+            "engin_frontal": engin_row["engin_frontal"],
+            "engin_retract": engin_row["engin_retract"],
+            "engin_tous": int(
+                engin_row["engin_debout"] == 1 and
+                engin_row["engin_frontal"] == 1 and
+                engin_row["engin_retract"] == 1
+            ),
+            "membres_inf": membres_inf,
+            "poignet": poignet,
+            "epaule": epaule,
+            "dos": dos,
+            "cervicales": cervicales,
+            "posture": posture
+        })
+
+    # VEC
+    for file in vec_files:
+
+        name = file.name.replace(".xlsx", "")
+
+        df = pd.read_excel(file, sheet_name="Evaluation ergonomique")
+
+        membres_inf, poignet, epaule, dos, cervicales, posture = compute_postures_vec(df)
+
+        engin_row = engins_df.loc[engins_df["Poste"] == name].iloc[0]
+
+        results.append({
+            "Poste": name,
+            "Engin": engin_row["Engin"],
+            "engin_debout": engin_row["engin_debout"],
+            "engin_frontal": engin_row["engin_frontal"],
+            "engin_retract": engin_row["engin_retract"],
+            "engin_tous": int(
+                engin_row["engin_debout"] == 1 and
+                engin_row["engin_frontal"] == 1 and
+                engin_row["engin_retract"] == 1
+            ),
+            "membres_inf": membres_inf,
+            "poignet": poignet,
+            "epaule": epaule,
+            "dos": dos,
+            "cervicales": cervicales,
+            "posture": posture
+        })
+
+    return pd.DataFrame(results)
