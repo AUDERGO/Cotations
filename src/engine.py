@@ -14,8 +14,7 @@ def read_table1(file):
 
     wb = load_workbook(
         filename=BytesIO(content),
-        data_only=True,
-        read_only=True
+        data_only=True
     )
 
     ws = wb["Résultats"]
