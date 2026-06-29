@@ -20,7 +20,21 @@ def read_table1(file):
 
     ws = wb["Résultats"]
 
+    """
     table = ws.tables["Table1"]
+    data = ws[table.ref]
+    """
+
+    if not ws.tables:
+        raise ValueError("❌ Aucune table détectée dans 'Résultats'")
+
+    # récupère automatiquement la première table
+    table_name = list(ws.tables.keys())[0]
+
+    # debug utile
+    print("Table utilisée :", table_name)
+
+    table = ws.tables[table_name]
     data = ws[table.ref]
 
     rows = list(data)
