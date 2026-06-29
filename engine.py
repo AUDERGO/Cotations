@@ -1,10 +1,32 @@
 import pandas as pd
 
 def safe_check(df, crit):
-    row = df[df["N°"] == crit]
+
+    # nettoyage colonnes
+    df.columns = df.columns.str.strip().str.lower()
+
+    # mapping colonnes
+    if "item" not in df.columns:
+        raise ValueError("❌ Colonne ITEM absente")
+
+    # noms exacts dans ton fichier
+    col_j = "points jaunes"
+    col_r = "points rouges"
+
+    if col_j not in df.columns or col_r not in df.columns:
+        raise ValueError("❌ Colonnes points jaunes / rouges absentes")
+
+    # sécurisation valeurs
+    df[col_j] = df[col_j].fillna(0)
+    df[col_r] = df[col_r].fillna(0)
+
+    # filtrage
+    row = df[df["item"] == crit]
+
     if row.empty:
         return 0
-    return int((row["J"].values[0] + row["R"].values[0]) > 0)
+
+    return int((row[col_j].values[0] + row[col_r].values[0]) > 0)
 
 
 # -------- MEC --------
