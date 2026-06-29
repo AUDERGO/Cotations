@@ -1,5 +1,39 @@
 import pandas as pd
 
+def extract_charges(file, is_mec):
+
+    df = pd.read_excel(file, sheet_name="Evaluation ergonomique", header=None)
+
+    if is_mec:
+        mapping = {
+            "3_6_KG": (27, 9),
+            "6_9_KG": (28, 9),
+            "9_12_KG": (29, 9),
+            "12+_KG": (30, 9),
+            "materiel": (31, 9),
+            "specifique": (32, 9)
+        }
+    else:
+        mapping = {
+            "3_6_KG": (23, 9),
+            "6_9_KG": (24, 9),
+            "9_12_KG": (25, 9),
+            "12+_KG": (26, 9),
+            "materiel": (27, 9),
+            "specifique": (28, 9)
+        }
+
+    result = {}
+
+    for key, (row, col) in mapping.items():
+        try:
+            value = df.iloc[row, col]
+            result[key] = float(value) if pd.notna(value) else 0
+        except:
+            result[key] = 0
+
+    return result
+
 def safe_check(df, crit):
 
     # nettoyage colonnes
