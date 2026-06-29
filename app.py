@@ -40,7 +40,7 @@ if st.button("🚀 Lancer le calcul"):
 
         st.write(f"Nombre de postes traités : {len(df)}")
 
-        # ✅ EXPORT EXCEL (AU BON ENDROIT)
+        # ✅ EXPORT EXCEL
 
         now = datetime.now()
         filename = now.strftime("bilan_cotations_%Y-%m-%d_%H-%M.xlsx")
