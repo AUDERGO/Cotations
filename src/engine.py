@@ -1,9 +1,9 @@
 import pandas as pd
 from openpyxl import load_workbook
 
-
+"""
 # =========================
-# LECTURE TABLE1 (Résultats)
+# LECTURE TABLE1 (Résultats) - ok fonctionne mais TRES LENT
 # =========================
 def read_table1(file):
 
@@ -47,7 +47,32 @@ def read_table1(file):
     df = df[df["item"].notna()]
 
     return df
+"""
 
+def read_table1(file):
+
+    df_raw = pd.read_excel(file, sheet_name="Résultats", header=None)
+
+    header_row = None
+
+    for i in range(len(df_raw)):
+        row = df_raw.iloc[i].astype(str).str.lower()
+
+        if "item" in row.values:
+            header_row = i
+            break
+
+    if header_row is None:
+        raise ValueError("❌ Ligne header ITEM introuvable")
+
+    df = pd.read_excel(file, sheet_name="Résultats", header=header_row)
+
+    # nettoyage
+    df.columns = df.columns.str.strip().str.lower()
+
+    df = df[df["item"].notna()]
+
+    return df
 
 # =========================
 # SAFE CHECK POSTURE
