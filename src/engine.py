@@ -279,14 +279,15 @@ def process_files(mec_files, vec_files, engins_file):
     
     df = pd.DataFrame(results)
 
-    # ✅ ordre d'affichage voulu
+    print("Colonnes dispo :", df.columns.tolist())  # 👈 debug
+
     ordered_cols = [
         "Poste",
         "engin_debout",
         "engin_frontal",
         "engin_retract",
         "engin_tous",
-        "Engin",
+        "Engin",        
         "Charge",
         "3_6_KG",
         "6_9_KG",
@@ -294,20 +295,17 @@ def process_files(mec_files, vec_files, engins_file):
         "12+_KG",
         "materiel",
         "specifique",
-        "posture"
+        "posture",
         "epaule",
         "dos",
         "cervicales",
         "membres_inf",
-        "poignet",
+        "poignet"
         
     ]
 
-    # ✅ sécurité (si colonnes en plus ou renommées)
     ordered_cols = [col for col in ordered_cols if col in df.columns]
 
-    # ✅ réorganisation
     df = df[ordered_cols]
 
     return df
-
